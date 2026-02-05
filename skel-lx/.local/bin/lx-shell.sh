@@ -1,0 +1,214 @@
+#!/usr/bin/bash
+umask 077
+set -euo pipefail
+
+IFS=$' \n\t' 
+
+# Initialisation des variables
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOCAL="$(cd "$SCRIPT_DIR/../../.local" && pwd)"
+COMMANDS_DIR="$LOCAL/bin"
+COMMANDS_ENABLED="$LOCAL/commands_enabled"
+LOG_SHELL="$LOCAL/shell.log"
+LOGGER_ENABLED="$LOCAL/logger_enabled"
+
+echo "$LOCAL"
+if [[ ! -f "$COMMANDS_ENABLED" ]]; then
+    echo "No command enabled" >&2 #renvoie vers stderr
+    exit 1 #erreur
+fi
+if [[ ! -f "$LOGGER_ENABLED" ]]; then
+    echo "No logger enabled" >&2 #renvoie vers stderr
+    exit 1 #erreur
+fi
+
+mapfile -t COMMAND_LIST < "$COMMANDS_ENABLED"
+mapfile -t LOGGER_LIST < <(grep -v '^#' "$LOGGER_ENABLED")
+
+if  [[ -n "${SSH_CONNECTION:-}" ]]; 
+then
+    REMOTE_IP="${SSH_CONNECTION%% *}"     
+else
+    REMOTE_IP="Unknown Origin"
+fi
+
+if [[ "$1" == "-c" ]]; then
+    shift  
+fi
+
+read -ra ARGS_SHELL <<< "$*"
+LOGGER="${ARGS_SHELL[1]}"   # L'argument fournis dans command= correspond au propriétaire de la clé.
+
+# Definiton des fonctions
+
+log() {
+    printf '%s %s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$LOGGER :" "$*" >> "$LOG_SHELL"
+}
+
+logger_allowed() {
+    local logger
+    for logger in "${LOGGER_LIST[@]}"; do
+        [[ "$logger" = "$LOGGER" ]] && return 0 ## Logger autorisé
+    done
+    return 1 #Logger non autorisé
+}
+
+exit_log() {
+    log " === Logout === $*"
+    exit 1
+}
+
+rejected() {
+    log " === Rejected === $*"
+    exit 1
+}
+
+is_safe_path() {
+    local path="$1"
+    local resolved
+    resolved="$(realpath -e "$path")" || return 1
+    # s'assurer que resolved commence par COMMAND_DIR plus slash 
+    case "$resolved/" in
+        "$COMMANDS_DIR/"* ) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+is_allowed() {
+    local cmd="$1"
+    for allowed in "${COMMAND_LIST[@]}"; do
+        [[ "$allowed" == "$cmd" ]] && return 0 # false && next => ne fait pas next
+    done
+    return 1 # 1 == false // 0 == true
+}
+
+run_file() {
+    local name="$1"; shift #Le shif decale les arguments donc $@ contient tout les arguments a fournir a la commande ( et plus son nom qui était en 1 )
+    local file="$COMMANDS_DIR/$name"
+
+    # Reject names with slashes or hidden names
+    if [[ "$name" == */* || "$name" == .* ]]; then
+        echo "Forbidden command name" >&2
+        log "Forbidden command name: $name"
+        return 1
+    fi
+
+    # Ensure file exists and is regular file
+    if [[ ! -f "$file" ]]; then
+        echo "Command file not found" >&2
+        log "Command not found: $name"
+        return 127 # exit command not found
+    fi
+
+    # Ensure realpath resolves inside COMMAND_DIR (prevent symlink escape)
+    if ! is_safe_path "$file"; then
+        echo "Command file unsafe" >&2
+        log "Command unsafe: $name"
+        return 1
+    fi
+
+    # Ensure executable
+    if [[ ! -x "$file" ]]; then
+        echo "Command file not executable" >&2
+        log "Command not executable: $name"
+        return 1
+    fi
+
+    log "Command executed: $file $*" 
+
+    # $* => concaténer, $@ arg séparé
+
+    "$file" "$@"
+    statut=$?
+    if [[ $statut -ne 0 ]]; then
+        log "Failed to execute"
+    fi
+
+    return $statut #contient le code de retour de la derniere opération ie la command 
+
+}
+
+# Executement du shell
+
+
+if ! logger_allowed;then
+    rejected "$LOGGER non autorisé"
+fi
+if [[ "$REMOTE_IP" = "Unknown Origin" ]]; then
+    rejected "Unknown Origin"
+fi
+
+log " === Login === from $REMOTE_IP"
+
+#Mode non interactif
+
+if [[ -n "${SSH_ORIGINAL_COMMAND:-}" ]]; then
+    read -r -a TOKS <<< "$SSH_ORIGINAL_COMMAND"
+    if [[ ${#TOKS[@]} -eq 0 ]]; then
+        echo "No Interactive - no command provided." >&2
+        exit_log "No Interative - no command provided"
+        exit 1
+    fi
+    CMD="${TOKS[0]}"
+    CMD="${CMD//$'\r'/}"
+    
+    ARGS=()
+    if [[ ${#TOKS[@]} -gt 1 ]]; then
+        ARGS=("${TOKS[@]:1}")
+    fi
+
+    if ! is_allowed "$CMD"; then
+        echo "Command not allowed: $CMD" >&2
+        exit_log "No Interative - command not allowed: $CMD"
+        exit 1
+    fi
+    log "No Interactive - run"
+    run_file "$CMD" "${ARGS[@]}"
+    log "=== LOGOUT ==="
+    exit $?
+fi
+
+
+#Mode interactif
+echo "=== Restricted shell for $CURRENT_USER used by $LOGGER ==="
+echo "Allowed commands : ${COMMAND_LIST[*]}"
+echo "Type 'exit' or Ctrl-D to quit."
+echo
+
+while true; do
+    printf "lx> "
+    if ! IFS= read -r -a TOKS; then
+        exit_log "Exit"
+        break #si read ne lit pas ( ex ctrl + D ) on sort de la boucle
+    fi
+    if [[ ${#TOKS[@]} -eq 0 ]]; then ##TOKS[@] renvoie la longueur du array et regarde si c'est vide
+        continue # remonte a la condition de la boucle
+    fi
+
+    CMD="${TOKS[0]}" #commande rentré par l'user
+    CMD="${CMD//$'\r'/}" #enleve le \r des commandes windows
+
+    if [[ "$CMD" == "exit" ]]; then
+        exit_log "Exit"
+        break
+    fi
+
+    if ! is_allowed "$CMD"; then
+        echo "Command not allowed" >&2
+        log "Interative - command not allowed: $CMD"
+        continue
+    fi
+
+    ARGS=()
+    if [[ ${#TOKS[@]} -gt 1 ]]; then
+        ARGS=("${TOKS[@]:1}")
+    fi
+
+    log "Interative - run"
+    run_file "$CMD" "${ARGS[@]}"
+
+done
+
+
+exit 0 

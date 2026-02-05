@@ -1,0 +1,55 @@
+#!/usr/bin/bash
+umask 077
+set -euo pipefail
+
+LX_DIR="/etc/lx"
+CONFIG_FILE="$LX_DIR/lx.conf"
+CMD_INSTALLED="$LX_DIR/cmd_installed"
+SKEL_DIR="/etc/skel-lx"
+
+mapfile -t CMD_LIST < "$CMD_INSTALLED"
+
+
+if [[ ! -d "$LX_DIR" ]]; then
+  echo "Dossier source introuvable : $LX_DIR" >&2
+  exit 1
+fi
+
+if [[ ! -f "$CONFIG_FILE" ]]; then 
+  echo "Config manquante : $CONFIG_FILE" >&2
+  exit 1
+fi
+
+while IFS='=' read -r key value; do
+  # Ignorer lignes vides ou commentaires
+  [[ -z "$key" || "$key" =~ ^# ]] && continue
+
+  case "$key" in
+    CMD_DEST)
+      CMD_DEST="$value"
+      ;;
+  esac
+done < "$CONFIG_FILE"
+
+
+for cmd in "$CMD_LIST"; do
+  
+  cmd_name="$(basename "$cmd")"
+  echo "Désinstallation de $cmd_name réussi"
+  sudo rm "$CMD_DEST/$cmd_name"
+
+done
+
+
+read -rp "⚠️ Supprimer le dossier $LX_DIR ? [y/N] " confirm
+if [[ "$confirm" =~ ^[Yy]$ ]]; then
+  sudo rm -rf "$LX_DIR"
+  echo "$LX_DIR supprimé"
+else
+  echo "Suppression annulée"
+fi
+
+
+
+echo "Uninstalled succesfully"
+exit 0
