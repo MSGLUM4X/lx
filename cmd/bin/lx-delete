@@ -1,0 +1,26 @@
+#!/usr/bin/bash
+umask 077
+set -euo pipefail
+
+
+usage() {
+  echo "Usage: $0 -u <username> -r <repo>"
+  exit 1
+}
+
+[[ $# -le 2 ]] || {
+  echo "Trop d'arguments"
+  usage
+}
+
+[[ "$1" == "-u" ]] || usage
+
+USER_NAME="$2"
+
+# Vérifier valeur non vide
+[[ -n "$USER_NAME" ]] || usage
+
+
+sudo deluser -remove-home "$USER_NAME"
+
+lx-create -u test -r git@github.com:MSGLUM4X/maxime-rouard.fr

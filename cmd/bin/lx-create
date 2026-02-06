@@ -1,10 +1,40 @@
 #!/usr/bin/bash
 umask 077
 set -euo pipefail
-
+set -x   
 LX_DIR="/etc/lx"
 SKEL_DIR="$LX_DIR/skel-lx"
 CONFIG_FILE="$LX_DIR/lx.conf"
+
+usage() {
+  echo "Usage: $0 -u <username> -r <repo>"
+  exit 1
+}
+
+[[ $# -eq 4 ]] || {
+  echo "Bad arguments"
+  usage
+}
+
+[[ "$1" == "-u" ]] || usage
+
+USER_NAME="$2"
+
+# Vérifier valeur non vide
+[[ -n "$USER_NAME" ]] || usage
+
+
+[[ "$3" == "-r" ]] || usage
+
+GIT_REPO="$4"
+
+# Vérifier valeur non vide
+[[ -n "$GIT_REPO" ]] || usage
+
+
+
+echo "User fourni : $USER_NAME"
+echo "Repo fourni : $GIT_REPO"
 
 
 while IFS='=' read -r key value; do
@@ -19,28 +49,8 @@ while IFS='=' read -r key value; do
 done < "$CONFIG_FILE"
 
 SHELL_SRC="$CMD_DEST/lx-shell"
-
-usage() {
-  echo "Usage: $0 -u <username>"
-  exit 1
-}
-
-[[ $# -le 2 ]] || {
-  echo "Trop d'arguments"
-  usage
-}
-
-[[ "$1" == "-u" ]] || usage
-
-USER_NAME="$2"
-
-# Vérifier valeur non vide
-[[ -n "$USER_NAME" ]] || usage
-
-echo "User fourni : $USER_NAME"
-
 LX_USER="lx-$USER_NAME"
-HOME_DIR="/home/lx-$USER_NAME"
+HOME_DIR="/home/$LX_USER"
 SSH_DIR="$HOME_DIR/.ssh"
 
 
@@ -51,16 +61,72 @@ if id "$LX_USER" &>/dev/null; then
   exit 1
 fi
 
+############### CREATION DU USER ####################
 
+cancel() {
+  echo ""
+  echo "Creation of $LX_USER cancelled"
+  echo "Commande   : $BASH_COMMAND"
+  echo ""
+  sudo deluser -remove-home "$LX_USER"
+  exit 1
+}
+trap cancel ERR
 
 sudo useradd --system -k "$SKEL_DIR" -m -d "$HOME_DIR" "$LX_USER"
 sudo chsh -s "$SHELL_SRC" "$LX_USER"
 sudo chmod 700 "$HOME_DIR"
 
-sudo -u "$LX_USER" ssh-keygen -t rsa -b 4096
+echo ""
+echo "User created successful"
+echo ""
+
+############### CREATION DE CLE SSH POUR IDENTIFIER LE SERVEUR ####################
+
+sudo -u "$LX_USER" ssh-keygen -N "" -t rsa -b 4096 -f "$SSH_DIR/id_rsa" >/dev/null
+
+PUB_KEY="$HOME_DIR/.ssh/id_rsa.pub"
 
 sudo chmod 700 "$SSH_DIR"
-sudo chmod 400 "$HOME_DIR"/.ssh/id_rsa
+sudo chmod 400 "$HOME_DIR/.ssh/id_rsa"
+sudo chmod 444 "$PUB_KEY"
+
+echo ""
+echo "SSH key created successful"
+echo ""
+
+
+############### LIAISON DE LA CLE PUB DU USER AU REPO GIT ####################
+
+echo ""
+echo "🔑 Paste this in the deploy key of your github repo"
+sudo cat "$PUB_KEY"
+echo ""
+
+
+while true; do
+  read -rp "When you did it, enter y/Y to continue or type stop to quit this :" answer
+  case "$answer" in
+    [Yy])
+      echo "Continuing execution..."
+      break
+      ;;
+    stop)
+      cancel
+      ;;  
+    *)
+      echo "Please enter y or Y to continue."
+      ;;
+  esac
+done
+
+echo ""
+echo "Pub key - deploy git Successful"
+echo ""
+
+
+############### UPDATE DU SSHD CONFIG POUR METTRE LA CONNEXION AU NOUVEAU USER ####################
+
 
 SSHD_CONFIG="/etc/ssh/sshd_config"
 
@@ -70,12 +136,63 @@ if grep -q "^AllowUsers" "$SSHD_CONFIG"; then
   fi
 else
   echo "AllowUsers Not detected"
-  exit 1
+  #exit 1
 fi
 
 sudo sshd -t || {
   echo "Configuration SSH invalide Failed Installation. Go manually to your sshd_config file"
-  exit 1
+  #exit 1
 }
 
-sudo systemctl reload ssh
+#sudo systemctl reload ssh
+
+echo ""
+echo "SSH config update successfull"
+echo ""
+
+
+############### LIAISON DU USER AU REPO ####################
+
+sudo -u $LX_USER mkdir -p "$(dirname "$HOME_DIR/$USER_NAME")"
+sudo -u "$LX_USER" git clone "$GIT_REPO" "$HOME_DIR/$USER_NAME"
+
+echo ""
+echo "Cloning of the repo successful"
+echo ""
+
+############### CREATION DES SECRETS ACTION ####################
+# Créer une clé mettre le pub dans authorized et le privé dans le secret action du repo.
+
+echo "TMP creation"
+TMP_KEY="$(mktemp)" #crée un fichier temporaire unique avec un nom imprévisible
+rm -f "$TMP_KEY" # Sinon bug ssh-keygen Besoin de input user pour overwrite
+
+TMP_PUB="${TMP_KEY}.pub"
+AUTHORIZED_KEYS="$SSH_DIR/authorized_keys"
+echo "TMP creation reussi"
+
+
+cleanup() {
+  shred -u "$TMP_KEY" "$TMP_PUB" 2>/dev/null || true
+}
+trap cleanup EXIT 
+
+echo "Key gen"
+ssh-keygen -t ed25519 -N "" -f "$TMP_KEY" -C "github-$USER_NAME" >/dev/null
+echo "Key gen réussi"
+
+PUB_KEY="$(cat "$TMP_PUB")"
+echo "command=\"${SHELL_SRC} github\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty $PUB_KEY" | sudo tee -a "$AUTHORIZED_KEYS" >/dev/null
+sudo chmod 600 "$AUTHORIZED_KEYS"
+gh secret set SSH_PRIVATE_KEY --repo "$GIT_REPO" < "$TMP_KEY"
+
+#sudo usermod -p '*' "$LX_USER"
+#sudo passwd -u "$LX_USER"
+
+
+#Ajouter le user a une liste qui sera dans etc/lx/users
+
+echo ""
+echo "Creation de $LX_USER réussi"
+echo ""
+exit 0
