@@ -5,7 +5,6 @@ set -euo pipefail
 LX_DIR="/etc/lx"
 CONFIG_FILE="$LX_DIR/lx.conf"
 CMD_INSTALLED="$LX_DIR/cmd_installed"
-SKEL_DIR="/etc/skel-lx"
 
 mapfile -t CMD_LIST < "$CMD_INSTALLED"
 

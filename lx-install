@@ -10,6 +10,8 @@ CMD_INSTALLED="$LX_DIR/cmd_installed"
 CMD_DIR="$SRC_DIR/cmd/bin"
 SKEL_SRC="$SRC_DIR/skel-lx"
 SKEL_DEST="$LX_DIR/skel-lx"
+SHELL_SRC="$SRC_DIR/bin/lx-shell"
+
 
 if [[ -d "$LX_DIR" ]]; then
   read -rp "Update lx ? [y/N] " confirm
@@ -63,6 +65,14 @@ for file in "$CMD_DIR"/*; do
   sudo install -m 755 "$file" "$CMD_DEST/$cmd_name"
   echo "$cmd_name" | sudo tee -a "$CMD_INSTALLED" >/dev/null
 done
+
+SHELL_DEST="$CMD_DEST/lx-shell"
+sudo cp "$SHELL_SRC" "$SHELL_DEST"
+sudo chmod 755 "$SHELL_DEST"
+
+if ! grep -qxF "$SHELL_DEST" /etc/shells; then
+  echo "$SHELL_DEST" | sudo tee -a /etc/shells >/dev/null
+fi
 
 sudo cp -r "$SKEL_SRC" "$SKEL_DEST"
 

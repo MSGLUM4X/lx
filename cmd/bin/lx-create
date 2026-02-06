@@ -1,0 +1,81 @@
+#!/usr/bin/bash
+umask 077
+set -euo pipefail
+
+LX_DIR="/etc/lx"
+SKEL_DIR="$LX_DIR/skel-lx"
+CONFIG_FILE="$LX_DIR/lx.conf"
+
+
+while IFS='=' read -r key value; do
+  # Ignorer lignes vides ou commentaires
+  [[ -z "$key" || "$key" =~ ^# ]] && continue
+
+  case "$key" in
+    CMD_DEST)
+      CMD_DEST="$value"
+      ;;
+  esac
+done < "$CONFIG_FILE"
+
+SHELL_SRC="$CMD_DEST/lx-shell"
+
+usage() {
+  echo "Usage: $0 -u <username>"
+  exit 1
+}
+
+[[ $# -le 2 ]] || {
+  echo "Trop d'arguments"
+  usage
+}
+
+[[ "$1" == "-u" ]] || usage
+
+USER_NAME="$2"
+
+# Vérifier valeur non vide
+[[ -n "$USER_NAME" ]] || usage
+
+echo "User fourni : $USER_NAME"
+
+LX_USER="lx-$USER_NAME"
+HOME_DIR="/home/lx-$USER_NAME"
+SSH_DIR="$HOME_DIR/.ssh"
+
+
+[[ -x "$SHELL_SRC" ]] || { echo "Shell non exécutable"; exit 1; }
+
+if id "$LX_USER" &>/dev/null; then
+  echo "User $LX_USER existe déjà"
+  exit 1
+fi
+
+
+
+sudo useradd --system -k "$SKEL_DIR" -m -d "$HOME_DIR" "$LX_USER"
+sudo chsh -s "$SHELL_SRC" "$LX_USER"
+sudo chmod 700 "$HOME_DIR"
+
+sudo -u "$LX_USER" ssh-keygen -t rsa -b 4096
+
+sudo chmod 700 "$SSH_DIR"
+sudo chmod 400 "$HOME_DIR"/.ssh/id_rsa
+
+SSHD_CONFIG="/etc/ssh/sshd_config"
+
+if grep -q "^AllowUsers" "$SSHD_CONFIG"; then
+  if ! grep -q "^AllowUsers.*\b$LX_USER\b" "$SSHD_CONFIG"; then
+    sudo sed -i "/^AllowUsers/ s/$/ $LX_USER/" "$SSHD_CONFIG"
+  fi
+else
+  echo "AllowUsers Not detected"
+  exit 1
+fi
+
+sudo sshd -t || {
+  echo "Configuration SSH invalide Failed Installation. Go manually to your sshd_config file"
+  exit 1
+}
+
+sudo systemctl reload ssh
