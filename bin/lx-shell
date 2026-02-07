@@ -6,8 +6,8 @@ IFS=$' \n\t'
 
 # Initialisation des variables
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOCAL="$(cd "$SCRIPT_DIR/../../.local" && pwd)"
+CURRENT_USER=$(whoami)
+LOCAL="/home/$CURRENT_USER/.local"
 COMMANDS_DIR="$LOCAL/bin"
 COMMANDS_ENABLED="$LOCAL/commands_enabled"
 LOG_SHELL="$LOCAL/shell.log"
