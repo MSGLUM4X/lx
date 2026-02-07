@@ -1,26 +1,83 @@
 #!/usr/bin/bash
 umask 077
 set -euo pipefail
+set -x
 
-
-usage() {
-  echo "Usage: $0 -u <username> -r <repo>"
+# Vérifier que le script est exécuté en root
+if [[ "$(id -u)" -ne 0 ]]; then
+  echo "This script must be run as root."
+  echo "Re-run with: sudo $0"
   exit 1
-}
+fi
 
-[[ $# -le 2 ]] || {
-  echo "Trop d'arguments"
-  usage
-}
-
-[[ "$1" == "-u" ]] || usage
-
-USER_NAME="$2"
-
-# Vérifier valeur non vide
-[[ -n "$USER_NAME" ]] || usage
+LX_DIR="/etc/lx"
+LX_USERS="$LX_DIR/users"
 
 
-sudo deluser -remove-home "$USER_NAME"
+mapfile -t USERS < "$LX_USERS"
 
-lx-create -u test -r git@github.com:MSGLUM4X/maxime-rouard.fr
+MENU_ITEMS=()
+
+for u in "${USERS[@]}"; do
+  MENU_ITEMS+=("$u" "" OFF)
+done
+
+MENU_ITEMS+=("Tous" "Sélectionner tous les utilisateurs" OFF)
+MENU_ITEMS+=("Annuler" "Quitter le script" OFF)
+
+SELECTED=$(whiptail \
+  --title "Sélection utilisateurs" \
+  --checklist "Choisis les utilisateurs (ESPACE pour cocher)" \
+  20 70 12 \
+  "${MENU_ITEMS[@]}" \
+  3>&1 1>&2 2>&3
+)
+
+EXIT_CODE=$?
+
+# ---------- ANNULATION ----------
+if [[ $EXIT_CODE -ne 0 ]]; then
+  echo "Annulé"
+  exit 0
+fi
+
+# ---------- PARSE RESULT ----------
+read -r -a RAW <<< "$SELECTED"
+
+CHOICES=()
+for c in "${RAW[@]}"; do
+  CHOICES+=("${c//\"/}")
+done
+
+# ---------- GESTION ANNULER ----------
+for c in "${CHOICES[@]}"; do
+  [[ "$c" == "Annuler" ]] && {
+    echo "Annulé"
+    exit 0
+  }
+done
+
+echo "$(printf '%s\n' "${CHOICES[@]}")"
+echo "$(printf '%s\n' "${CHOICES[@]}" | grep -qx "Tous")"
+
+# ---------- GESTION TOUS ----------
+if printf '%s\n' "${CHOICES[@]}" | grep -qx "Tous"; then
+  FINAL_USERS=("${USERS[@]}")
+else
+  FINAL_USERS=("${CHOICES[@]}")
+fi
+
+# ---------- ACTION ----------
+echo "Utilisateurs sélectionnés :"
+for u in "${FINAL_USERS[@]}"; do
+  sudo deluser -remove-home "$u"
+  if sudo grep -qxF "$u" "$LX_USERS"; then
+    sudo grep -vxF "$u" "$LX_USERS" | sudo tee "$LX_USERS.tmp" >/dev/null || true
+    cat "$LX_USERS.tmp"
+    sudo mv "$LX_USERS.tmp" "$LX_USERS"
+    sudo chmod 644 "$LX_USERS"
+  fi
+  echo "User ($u) deleted"
+done
+
+exit 0

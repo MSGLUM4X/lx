@@ -34,8 +34,8 @@ done < "$CONFIG_FILE"
 for cmd in "$CMD_LIST"; do
   
   cmd_name="$(basename "$cmd")"
-  echo "Désinstallation de $cmd_name réussi"
   sudo rm "$CMD_DEST/$cmd_name"
+  echo "Désinstallation de $cmd_name réussi"
 
 done
 

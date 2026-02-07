@@ -7,6 +7,7 @@ CONFIG_FILE="$SRC_DIR/lx.conf"
 LX_DIR="/etc/lx"
 CONFIG_DEST="$LX_DIR/lx.conf"
 CMD_INSTALLED="$LX_DIR/cmd_installed"
+LX_USERS="$LX_DIR/users"
 CMD_DIR="$SRC_DIR/cmd/bin"
 SKEL_SRC="$SRC_DIR/skel-lx"
 SKEL_DEST="$LX_DIR/skel-lx"
@@ -53,6 +54,9 @@ sudo mkdir -p "$LX_DIR"
 sudo install -m 644 "$CONFIG_FILE" "$CONFIG_DEST"
 sudo touch "$CMD_INSTALLED"
 sudo chmod 644 "$CMD_INSTALLED"
+sudo touch "$LX_USERS"
+sudo chmod 644 "$LX_USERS"
+
 
 echo "Installation du $LX_DIR réussi"
 

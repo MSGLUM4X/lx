@@ -1,10 +1,12 @@
 #!/usr/bin/bash
 umask 077
 set -euo pipefail
-set -x   
+
 LX_DIR="/etc/lx"
+LX_USERS="$LX_DIR/users"
 SKEL_DIR="$LX_DIR/skel-lx"
 CONFIG_FILE="$LX_DIR/lx.conf"
+
 
 usage() {
   echo "Usage: $0 -u <username> -r <repo>"
@@ -186,11 +188,10 @@ echo "command=\"${SHELL_SRC} github\",no-port-forwarding,no-X11-forwarding,no-ag
 sudo chmod 600 "$AUTHORIZED_KEYS"
 gh secret set SSH_PRIVATE_KEY --repo "$GIT_REPO" < "$TMP_KEY"
 
-#sudo usermod -p '*' "$LX_USER"
-#sudo passwd -u "$LX_USER"
+sudo passwd -l "$LX_USER"
 
 
-#Ajouter le user a une liste qui sera dans etc/lx/users
+echo "$LX_USER" | sudo tee -a "$LX_USERS" >/dev/null
 
 echo ""
 echo "Creation de $LX_USER réussi"
