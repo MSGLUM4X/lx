@@ -1,7 +1,6 @@
 #!/usr/bin/bash
 umask 077
 set -euo pipefail
-set -x
 
 # Vérifier que le script est exécuté en root
 if [[ "$(id -u)" -ne 0 ]]; then

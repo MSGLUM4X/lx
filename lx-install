@@ -15,11 +15,13 @@ SHELL_SRC="$SRC_DIR/bin/lx-shell"
 
 
 if [[ -d "$LX_DIR" ]]; then
-  read -rp "Update lx ? [y/N] " confirm
-  if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-    echo "Installation Cancelled" 
-    exit 0
-  fi
+  echo "lx already installed"
+  exit 1
+  #read -rp "Update lx ? [y/N] " confirm
+  #if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+  #  echo "Installation Cancelled" 
+  #  exit 0
+  #fi
 fi
 
 if [[ ! -d "$SKEL_SRC" ]]; then
@@ -81,13 +83,20 @@ fi
 sudo cp -r "$SKEL_SRC" "$SKEL_DEST"
 
 # Fixer les permissions : root:root et 755 pour les dossiers, 644 pour les fichiers
-sudo find "$SKEL_DEST" -type d -exec chmod 755 {} \;
-sudo find "$SKEL_DEST" -type f -exec chmod 644 {} \;
+#sudo find "$SKEL_DEST" -type d -exec chmod 700 {} \;
+#sudo find "$SKEL_DEST" -type f -exec chmod 600 {} \;
+sudo chmod 700 "$SKEL_DEST"
 
-if [[ -d "$SKEL_DEST/.local/bin" ]]; then
-  sudo find "$SKEL_DEST/.local/bin" -type f -exec chmod 755 {} \;
-fi
+SKEL_LOCAL="$SKEL_DEST/.local"
 
+sudo chmod 500 "$SKEL_LOCAL"
+sudo chmod 400 "$SKEL_LOCAL/commands_enabled"
+sudo chmod 200 "$SKEL_LOCAL/commands.log"
+sudo chmod 400 "$SKEL_LOCAL/logger_enabled"
+sudo chmod 200 "$SKEL_LOCAL/shell.log"
+sudo chmod -R 500 "$SKEL_LOCAL/bin"
+
+sudo chmod 644 "$CMD_INSTALLED"
 sudo chown -R root:root "$SKEL_DEST"
 
 echo "Installation terminée"
