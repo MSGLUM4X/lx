@@ -193,8 +193,8 @@ SSH_PORT=$(grep -i '^Port ' /etc/ssh/sshd_config | awk '{print $2}')
 SSH_PORT=${SSH_PORT:-22}
 echo "$SSH_PORT" | gh secret set LX_SSH_PORT --repo "$GIT_REPO" 
 
-gh secret set LX_SERVER_USER --repo "$GIT_REPO" < "$LX_USER"
-gh secret set LX_SERVER_IP --repo "$GIT_REPO" < "$(curl -4 ifconfig.me)"
+echo "$LX_USER" | gh secret set LX_SERVER_USER --repo "$GIT_REPO"
+echo "$(curl -4 ifconfig.me)" | "gh secret set LX_SERVER_IP --repo "$GIT_REPO" 
 
 sudo passwd -l "$LX_USER"
 
