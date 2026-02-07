@@ -13,7 +13,6 @@ COMMANDS_ENABLED="$LOCAL/commands_enabled"
 LOG_SHELL="$LOCAL/shell.log"
 LOGGER_ENABLED="$LOCAL/logger_enabled"
 
-echo "$LOCAL"
 if [[ ! -f "$COMMANDS_ENABLED" ]]; then
     echo "No command enabled" >&2 #renvoie vers stderr
     exit 1 #erreur
