@@ -1,6 +1,6 @@
-# lx-serv
+# lx
 
-`lx-serv` est un outil permettant de créer et gérer des **utilisateurs de service** sur un serveur Linux, connectés **uniquement via clé SSH**, et utilisés pour le **déploiement automatique depuis GitHub Actions**.
+`lx` est un outil permettant de créer et gérer des **utilisateurs de service** sur un serveur Linux, connectés **uniquement via clé SSH**, et utilisés pour le **déploiement automatique depuis GitHub Actions**.
 
 ---
 
@@ -152,4 +152,4 @@ Et supprimer la ligne correspondant au shell `lx`.
   * ne peuvent se connecter **que via clé SSH**
   * ont un shell restreint
 * Les clés privées **ne sont jamais stockées sur le serveur**
-* `lx-serv` est conçu pour un usage **CI/CD sécurisé**
+* `lx` est conçu pour un usage **CI/CD sécurisé**
