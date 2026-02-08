@@ -41,12 +41,14 @@ done
 read -rp "⚠️ Supprimer le dossier $LX_DIR ? [y/N] " confirm
 if [[ "$confirm" =~ ^[Yy]$ ]]; then
   sudo rm -rf "$LX_DIR"
-else
-  echo "$LX_DIR non supprimé"
-  exit 0
+  echo "$LX_DIR supprimé"
+fi
+
+read -rp "⚠️ Supprimer le shell $CMD_DEST/lx-shell ? [y/N] " confirm
+if [[ "$confirm" =~ ^[Yy]$ ]]; then
+  sudo rm -rf "$LX_DIR"
+  echo "$CMD_DEST/lx-shell non supprimé"
 fi
 
 
-
-echo "$LX_DIR supprimé"
 exit 0
