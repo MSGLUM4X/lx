@@ -30,9 +30,7 @@ while IFS='=' read -r key value; do
   esac
 done < "$CONFIG_FILE"
 
-cat $CMD_INSTALLED
-
-for cmd in "$CMD_LIST"; do
+for cmd in "${CMD_LIST[@]}"; do
   echo "$cmd"
   cmd_name="$(basename "$cmd")"
   sudo rm "$CMD_DEST/$cmd_name"
