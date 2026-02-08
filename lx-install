@@ -82,7 +82,7 @@ fi
 
 sudo cp -r "$SKEL_SRC" "$SKEL_DEST"
 
-# Fixer les permissions : root:root et 755 pour les dossiers, 644 pour les fichiers
+# Fixer les permissions 
 #sudo find "$SKEL_DEST" -type d -exec chmod 700 {} \;
 #sudo find "$SKEL_DEST" -type f -exec chmod 600 {} \;
 sudo chmod 700 "$SKEL_DEST"

@@ -163,7 +163,6 @@ echo "Cloning of the repo successful"
 echo ""
 
 ############### CREATION DES SECRETS ACTION ####################
-# Créer une clé mettre le pub dans authorized et le privé dans le secret action du repo.
 
 echo "TMP creation"
 TMP_KEY="$(mktemp)" #crée un fichier temporaire unique avec un nom imprévisible

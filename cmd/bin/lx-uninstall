@@ -43,12 +43,12 @@ done
 read -rp "⚠️ Supprimer le dossier $LX_DIR ? [y/N] " confirm
 if [[ "$confirm" =~ ^[Yy]$ ]]; then
   sudo rm -rf "$LX_DIR"
-  echo "$LX_DIR supprimé"
 else
-  echo "Suppression annulée"
+  echo "$LX_DIR non supprimé"
+  exit 0
 fi
 
 
 
-echo "Uninstalled succesfully"
+echo "$LX_DIR supprimé"
 exit 0
