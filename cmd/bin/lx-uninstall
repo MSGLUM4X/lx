@@ -46,7 +46,7 @@ fi
 
 read -rp "⚠️ Supprimer le shell $CMD_DEST/lx-shell ? [y/N] " confirm
 if [[ "$confirm" =~ ^[Yy]$ ]]; then
-  sudo rm -rf "$LX_DIR"
+  sudo rm "$LX_DIR"
   echo "$CMD_DEST/lx-shell supprimé"
 fi
 
