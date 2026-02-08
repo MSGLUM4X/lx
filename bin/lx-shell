@@ -149,21 +149,30 @@ if [[ -n "${SSH_ORIGINAL_COMMAND:-}" ]]; then
         exit_log "No Interative - no command provided"
         exit 1
     fi
-    CMD="${TOKS[0]}"
-    CMD="${CMD//$'\r'/}"
-    
-    ARGS=()
-    if [[ ${#TOKS[@]} -gt 1 ]]; then
-        ARGS=("${TOKS[@]:1}")
-    fi
+        
+    for cmd in "${TOKS[@]}"; do
 
-    if ! is_allowed "$CMD"; then
-        echo "Command not allowed: $CMD" >&2
-        exit_log "No Interative - command not allowed: $CMD"
+      cmd="${cmd//$'\r'/}"
+
+      if ! is_allowed "$cmd"; then
+        echo "Command not allowed: $cmd" >&2
+        exit_log "No Interative - command not allowed: $cmd"
+        log "=== LOGOUT ==="
         exit 1
-    fi
-    log "No Interactive - run"
-    run_file "$CMD" "${ARGS[@]}"
+      fi
+
+      log "No Interactive - run"
+      run_file "$cmd"
+      EXIT_CODE=$?
+      if [[ $EXIT_CODE -ne 0 ]]; then
+        echo "Command failed: $cmd (exit code: $EXIT_CODE)" >&2
+        exit_log "No Interactive - command failed: $cmd"
+        log "=== LOGOUT ==="
+        exit $EXIT_CODE
+      fi
+    done
+
+    for 
     log "=== LOGOUT ==="
     exit $?
 fi
