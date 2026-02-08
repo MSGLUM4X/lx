@@ -185,6 +185,7 @@ echo "Key gen réussi"
 PUB_KEY="$(cat "$TMP_PUB")"
 echo "command=\"${SHELL_SRC} github\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty $PUB_KEY" | sudo tee -a "$AUTHORIZED_KEYS" >/dev/null
 sudo chmod 600 "$AUTHORIZED_KEYS"
+sudo chown "$LX_USER":"$LX_USER" "$AUTHORIZED_KEYS"
 
 gh secret set LX_SSH_KEY --repo "$GIT_REPO" < "$TMP_KEY"
 
