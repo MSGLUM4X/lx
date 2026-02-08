@@ -80,7 +80,8 @@ Ajoutez ce fichier dans votre repo :
 `.github/workflows/deploy.yml`
 
 ```yaml
-name: déploiement
+name: LX Remote Command
+
 
 on:
   push:
@@ -88,9 +89,42 @@ on:
       - main
 
 jobs:
-  deploy:
+  execute-commands:
     runs-on: ubuntu-latest
+    
     steps:
+      - uses: actions/checkout@v4
+      
+      - name: Vérifier si c'est un merge commit
+        id: check-merge
+        run: |
+          # Vérifier si le commit est un merge
+          if git log -1 --pretty=%P | grep -q ' '; then
+            echo "is_merge=true" >> $GITHUB_OUTPUT
+            echo "C'est un merge commit"
+          else
+            echo "is_merge=false" >> $GITHUB_OUTPUT
+            echo "Commit normal (non-merge), le workflow va s'arrêter"
+          fi
+      
+      - name: Extraire les commandes du merge commit
+        if: steps.check-merge.outputs.is_merge == 'true'
+        id: extract
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          echo "Message du commit:"
+          echo "$COMMIT_MSG"
+          
+          # Extraire les commandes
+          COMMANDS=$(echo "$COMMIT_MSG" | grep -oP '\[cmd:\K[^\]]+' | tr '\n' ',' | sed 's/,$//')
+          
+          if [ -z "$COMMANDS" ]; then
+            echo "Aucune commande trouvée, utilisation du défaut"
+            COMMANDS="default deploy"
+          fi
+          
+          echo "commands=$COMMANDS" >> $GITHUB_OUTPUT
+          echo "Commandes extraites: $COMMANDS"
       - name: Déploiement sur le serveur de production
         uses: appleboy/ssh-action@v1
         with:
@@ -98,8 +132,12 @@ jobs:
           username: ${{ secrets.LX_SERVER_USER }}
           port: ${{ secrets.LX_SSH_PORT }}
           key: ${{ secrets.LX_SSH_KEY }}
-          script: default
+          script: ${{steps.extract.outputs.commands}}$
 ```
+
+
+[cmd:migrate db] [cmd:default deploy]
+
 
 ---
 
