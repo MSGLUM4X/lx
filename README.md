@@ -259,6 +259,10 @@ chown lx-SERVICE:lx-SERVICE NOUVELLE_COMMANDE
 Pour désactiver une commande, il suffit de la retirer de `command_enabled`
 (il n’est pas nécessaire de supprimer le fichier).
 
+> Ce dépôt contient un ensemble de **commandes prêtes à l’emploi** :
+> [Commands](https://github.com/MSGLUM4X/lx-remote-command)
+
+
 ---
 
 ## Création d’un utilisateur administrateur
