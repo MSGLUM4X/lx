@@ -201,6 +201,25 @@ sudo passwd -u "$LX_USER"
 
 echo "$LX_USER" | sudo tee -a "$LX_USERS" >/dev/null
 
+
+while true; do
+  read -rp "Do you want to startup pm2 for this service (node service):" answer
+  case "$answer" in
+    [Yy])
+      sudo pm2 startup systemd -u "$LX_USER" --hp "$HOME_DIR/$USER_NAME"
+      break
+      ;;
+    [Nn])
+      break
+      ;;  
+    *)
+      echo "Please enter y or Y to confirm / n or N to dismiss."
+      ;;
+  esac
+done
+
+
+
 echo ""
 echo "Creation de $LX_USER réussi"
 echo ""
