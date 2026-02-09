@@ -77,7 +77,7 @@ Le script configure automatiquement les secrets suivants :
 
 Ajoutez ce fichier dans votre repo :
 
-`.github/workflows/deploy.yml`
+`.github/workflows/lx.yml`
 
 ```yaml
 name: LX Remote Command
@@ -107,7 +107,7 @@ jobs:
           
           if [ -z "$COMMANDS" ]; then
             echo "Aucune commande trouvée, utilisation du défaut"
-            COMMANDS="default deploy"
+            COMMANDS="default"
           fi
           
           echo "commands=$COMMANDS" >> $GITHUB_OUTPUT
