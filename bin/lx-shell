@@ -172,7 +172,6 @@ if [[ -n "${SSH_ORIGINAL_COMMAND:-}" ]]; then
       fi
     done
 
-    for 
     log "=== LOGOUT ==="
     exit $?
 fi

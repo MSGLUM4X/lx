@@ -122,6 +122,62 @@ jobs:
           script: ${{steps.extract.outputs.commands}}
 ```
 
+`.github/workflows/lx-manual.yml`
+```yaml
+name: LX Remote Command (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: 'Commande à exécuter sur le serveur'
+        required: true
+        type: choice
+        options:
+          - default
+          - pull
+          - f-deploy
+          - custom
+      custom_command:
+        description: 'Commande personnalisée (si "custom" est sélectionné)'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  execute-commands:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+  
+      - name: Préparer la commande à exécuter
+        id: prepare
+        run: |
+          SELECTED_CMD="${{ github.event.inputs.command }}"
+          CUSTOM_CMD="${{ github.event.inputs.custom_command }}"
+          
+          echo "Commande sélectionnée: $SELECTED_CMD"
+          
+          if [[ "$SELECTED_CMD" == "custom" ]]; then
+            COMMAND="$CUSTOM_CMD"
+          else 
+            COMMAND="$SELECTED_CMD"
+          fi
+          echo "commands=$COMMAND" >> $GITHUB_OUTPUT
+          echo "✅ Commande préparée: $COMMAND"
+      
+      - name: Déploiement sur le serveur de production
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.LX_SERVER_IP }}
+          username: ${{ secrets.LX_SERVER_USER }}
+          port: ${{ secrets.LX_SSH_PORT }}
+          key: ${{ secrets.LX_SSH_KEY }}
+          script: ${{steps.prepare.outputs.commands}}
+```   
+
+
 Fork le repo lx-service 
 Si le repo change 
 git fetch upstream
