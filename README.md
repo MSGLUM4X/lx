@@ -67,6 +67,14 @@ git clone git@github.com:MSGLUM4X/lx.git
 cd lx
 ./lx-install
 ```
+Une fois l’installation terminée avec succès, vous pouvez supprimer le dossier d’installation :
+
+```bash
+cd ..
+rm -r lx
+```
+
+> ℹ️ Cette étape est optionnelle et permet simplement de garder un système propre.
 
 ### Notes
 
