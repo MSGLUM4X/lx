@@ -116,7 +116,7 @@ Une fois terminé, revenir dans le terminal et appuyer sur **`Y`** pour continue
 
 ---
 
-## 🔐 Secrets GitHub Actions
+## Secrets GitHub Actions
 
 `lx` configure automatiquement les secrets suivants :
 
