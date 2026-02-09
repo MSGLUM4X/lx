@@ -11,12 +11,6 @@ Ces utilisateurs sont :
 
 ---
 
-Parfait 👍
-Voici **la table des matières à ajouter juste après le titre `# lx`**.
-Elle est compatible Markdown (GitHub la gère très bien).
-
----
-
 ## Table des matières
 
 * [lx](#lx)
