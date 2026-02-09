@@ -17,6 +17,7 @@ Ces utilisateurs sont :
 
   * [Installer GitHub CLI](#installer-github-cli)
   * [Authentifier le serveur auprès de GitHub](#authentifier-le-serveur-auprès-de-github)
+* [Installation](#installation)
 * [Création d’un service de déploiement](#création-dun-service-de-déploiement)
 * [🔑 Clé de déploiement GitHub](#-clé-de-déploiement-github)
 * [Secrets GitHub Actions](#secrets-github-actions)
@@ -53,6 +54,24 @@ gh auth login
 > * gérer les **clés de déploiement**
 
 ---
+Parfait, voici une version corrigée qui reflète exactement ça, sans ambiguïté 👌
+
+---
+
+## Installation
+
+Exécutez les commandes suivantes **depuis n’importe quel utilisateur**, directement **sur votre serveur Linux** :
+
+```bash
+git clone git@github.com:MSGLUM4X/lx.git
+cd lx
+./lx-install
+```
+
+### Notes
+
+* Le script `lx-install` nécessite des privilèges `sudo`
+* L’installation configure automatiquement tous les composants nécessaires à `lx`
 
 ## Création d’un service de déploiement
 
