@@ -13,7 +13,6 @@ Ces utilisateurs sont :
 
 ## Table des matières
 
-* [lx](#lx)
 * [Prérequis](#prérequis)
 
   * [Installer GitHub CLI](#installer-github-cli)
@@ -295,7 +294,7 @@ L’administrateur aura accès à **toutes les commandes autorisées**.
 
 ---
 
-## 🧹 Désinstallation / nettoyage
+## Désinstallation / nettoyage
 
 ### Supprimer lx
 
