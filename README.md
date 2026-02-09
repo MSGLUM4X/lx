@@ -146,9 +146,9 @@ Cela permet de relancer automatiquement le service après un redémarrage du ser
 ### Commandes utiles PM2
 
 ```bash
-sudo -u "$CURRENT_USER" pm2 list
-sudo -u "$CURRENT_USER" pm2 status
-sudo -u "$CURRENT_USER" pm2 logs
+sudo -u "$LX_USER" pm2 list
+sudo -u "$LX_USER" pm2 status
+sudo -u "$LX_USER" pm2 logs
 ```
 
 ---
