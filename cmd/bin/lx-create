@@ -206,7 +206,7 @@ while true; do
   read -rp "Do you want to startup pm2 for this service (node service):" answer
   case "$answer" in
     [Yy])
-      sudo pm2 startup systemd -u "$LX_USER" --hp "$HOME_DIR/$USER_NAME"
+      sudo pm2 startup systemd -u "$LX_USER" --hp "$HOME_DIR"
       break
       ;;
     [Nn])
