@@ -168,9 +168,10 @@ on:
       - main
 
 jobs:
-  execute-commands:
+  check-commands:
     runs-on: ubuntu-latest
-
+    outputs:
+      list: ${{steps.extract.outputs.commands}}
     steps:
       - uses: actions/checkout@v4
 
@@ -183,20 +184,23 @@ jobs:
           COMMANDS=$(echo "$COMMIT_MSG" | grep -oP '\[cmd:\K[^\]]+' | tr '\n' ' ' | sed 's/ $//')
 
           if [ -z "$COMMANDS" ]; then
-            echo "Aucune commande trouvée, utilisation du défaut"
-            COMMANDS="default"
+            exit 1
           fi
 
           echo "commands=$COMMANDS" >> $GITHUB_OUTPUT
-
+  execute-commands:
+    runs-on: ubuntu-latest
+    needs: check-commands
+    steps:
       - name: Exécution sur le serveur
+        if:
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.LX_SERVER_IP }}
           username: ${{ secrets.LX_SERVER_USER }}
           port: ${{ secrets.LX_SSH_PORT }}
           key: ${{ secrets.LX_SSH_KEY }}
-          script: ${{ steps.extract.outputs.commands }}
+          script: ${{ needs.check-commands.outputs.list }}
 ```
 
 ---
