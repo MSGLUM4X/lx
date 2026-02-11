@@ -220,7 +220,8 @@ on:
         options:
           - default
           - pull
-          - deploy
+          - reload
+          - start
           - custom
       custom_command:
         description: 'Commande personnalisée'
@@ -263,7 +264,7 @@ jobs:
 Lors du **merge d’une pull request**, ajoutez les commandes à exécuter dans le message de merge :
 
 ```text
-[cmd:pull][cmd:deploy]
+[cmd:pull][cmd:start]
 ```
 
 Les commandes seront exécutées **dans l’ordre**, et l’exécution s’arrête si l’une échoue.
